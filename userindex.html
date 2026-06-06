@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Flight Information</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Hide scrollbar for a seamless, monitor-like appearance */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        
+        /* Subtle pulse for TBA elements */
+        .tba-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-blue-50 font-sans selection:bg-blue-500 flex flex-col">
+
+    <!-- Header / Nav -->
+    <header class="bg-blue-900 border-b-4 border-blue-600 shadow-2xl p-6 flex flex-col md:flex-row justify-between items-center z-10">
+        <div class="flex items-center space-x-4">
+            <div class="bg-blue-500 p-4 rounded-full shadow-lg shadow-blue-500/50">
+                <i class="fa-solid fa-plane text-white text-4xl"></i>
+            </div>
+            <div>
+                <h1 class="text-4xl font-black tracking-widest text-white uppercase drop-shadow-md">International Airport</h1>
+                <p class="text-blue-300 font-bold tracking-widest text-md mt-1 uppercase">Passenger Flight Information Board</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex flex-col items-end">
+            <div class="flex items-center bg-slate-900 px-8 py-4 rounded-xl border border-blue-700 shadow-inner mb-2">
+                <i class="fa-regular fa-clock text-blue-400 text-3xl mr-4"></i>
+                <span class="font-mono text-4xl font-bold tracking-wider text-white drop-shadow" id="clock-display">00:00:00 AM</span>
+            </div>
+            <!-- Live Sync Indicator to help debugging -->
+            <div id="sync-status" class="text-xs font-bold uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-md border border-slate-700">
+                Checking Connection...
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid (Split 50/50 for Arriving and Parked) -->
+    <main class="flex-1 p-4 md:p-8 grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-[120rem] mx-auto w-full">
+        
+        <!-- ARRIVING FLIGHTS -->
+        <section class="bg-slate-900/80 rounded-2xl border border-blue-800 shadow-2xl overflow-hidden flex flex-col h-[80vh]">
+            <div class="bg-gradient-to-r from-blue-800 to-slate-900 p-5 border-b border-blue-700 flex items-center shadow-md">
+                <i class="fa-solid fa-plane-arrival text-blue-300 text-2xl mr-4"></i>
+                <h2 class="text-2xl font-black text-white uppercase tracking-widest">Arriving Flights</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4" id="arriving-container">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- LANDED / PARKED FLIGHTS -->
+        <section class="bg-slate-900/80 rounded-2xl border border-blue-800 shadow-2xl overflow-hidden flex flex-col h-[80vh]">
+            <div class="bg-gradient-to-r from-teal-800 to-slate-900 p-5 border-b border-teal-700 flex items-center shadow-md">
+                <i class="fa-solid fa-plane text-teal-300 text-2xl mr-4"></i>
+                <h2 class="text-2xl font-black text-white uppercase tracking-widest">Landed & Boarding</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4" id="parked-container">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Ticker -->
+    <footer class="bg-slate-950 border-t border-blue-900 p-4 overflow-hidden">
+        <div class="whitespace-nowrap animate-[pulse_4s_ease-in-out_infinite] text-blue-500 text-sm font-bold tracking-widest text-center uppercase">
+            Live Data Synced via Ground Control • Terminal and Gate assignments are subject to Ground Control Approval
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- FULL DATABASE SYNC (Matches Staff App 1:1) ---
+        const INITIAL_FLIGHTS = [
+            { id: '1', flightNumber: 'UK734', airline: 'Vistara', aircraftModel: 'Boeing 787-9', arrivalTime: '00:03', departureTime: '00:56', status: 'On Time', terminal: 'A', gate: '1', approved: true },
+            { id: '2', flightNumber: 'UK827', airline: 'Air India', aircraftModel: 'Airbus A320neo', arrivalTime: '00:19', departureTime: '01:04', status: 'On Time', terminal: 'B', gate: '2', approved: true },
+            { id: '3', flightNumber: 'AK189', airline: 'IndiGo', aircraftModel: 'Airbus A321neo', arrivalTime: '01:15', departureTime: '01:58', status: 'Late', terminal: 'C', gate: '3', approved: true },
+            { id: '4', flightNumber: 'AI898', airline: 'SpiceJet', aircraftModel: 'Boeing 787-8', arrivalTime: '01:26', departureTime: '02:10', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '5', flightNumber: '6E622', airline: 'AirAsia', aircraftModel: 'Airbus A320', arrivalTime: '01:42', departureTime: '02:38', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '6', flightNumber: 'SG514', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '02:20', departureTime: '03:03', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '7', flightNumber: 'UK873', airline: 'Air India', aircraftModel: 'Airbus A321neo', arrivalTime: '02:55', departureTime: '03:45', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '8', flightNumber: 'GH125', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '03:42', departureTime: '04:36', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '9', flightNumber: 'AI202', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '05:15', departureTime: '06:10', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '10', flightNumber: '6E303', airline: 'IndiGo', aircraftModel: 'Airbus A321', arrivalTime: '06:30', departureTime: '07:45', status: 'Emergency', terminal: '', gate: '', approved: false },
+            { id: '11', flightNumber: 'AI101', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '08:15', departureTime: '09:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '12', flightNumber: '6E205', airline: 'IndiGo', aircraftModel: 'Airbus A321neo', arrivalTime: '08:40', departureTime: '09:20', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '13', flightNumber: 'UK312', airline: 'Vistara', aircraftModel: 'Boeing 787-9', arrivalTime: '09:05', departureTime: '10:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '14', flightNumber: 'SG417', airline: 'SpiceJet', aircraftModel: 'Boeing 737-800', arrivalTime: '09:30', departureTime: '10:15', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '15', flightNumber: 'AK520', airline: 'AirAsia', aircraftModel: 'Airbus A320neo', arrivalTime: '10:00', departureTime: '10:45', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '16', flightNumber: 'UK845', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '11:15', departureTime: '12:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '17', flightNumber: 'FX991', airline: 'FedEx', aircraftModel: 'Boeing 777 Cargo', arrivalTime: '12:30', departureTime: '13:30', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '18', flightNumber: 'AI333', airline: 'Air India', aircraftModel: 'Airbus A350', arrivalTime: '13:45', departureTime: '14:45', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '19', flightNumber: 'SJ731', airline: 'SpiceJet', aircraftModel: 'Boeing 737 Cargo', arrivalTime: '15:45', departureTime: '17:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '20', flightNumber: 'UK999', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '16:20', departureTime: '17:15', status: 'Emergency', terminal: '', gate: '', approved: false },
+            { id: '21', flightNumber: '6E777', airline: 'IndiGo', aircraftModel: 'Airbus A320neo', arrivalTime: '18:00', departureTime: '19:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '22', flightNumber: 'AK888', airline: 'AirAsia', aircraftModel: 'Airbus A320', arrivalTime: '19:30', departureTime: '20:30', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '23', flightNumber: 'UK842', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '21:20', departureTime: '22:10', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '24', flightNumber: 'AI888', airline: 'Air India', aircraftModel: 'Boeing 777-200LR', arrivalTime: '21:40', departureTime: '22:35', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '25', flightNumber: 'SG518', airline: 'SpiceJet', aircraftModel: 'Boeing 737-800', arrivalTime: '22:00', departureTime: '22:45', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '26', flightNumber: 'SJ732', airline: 'SpiceJet', aircraftModel: 'Boeing 737 Cargo', arrivalTime: '22:49', departureTime: '23:50', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '27', flightNumber: 'AI821', airline: 'Air India', aircraftModel: 'Airbus A320neo', arrivalTime: '23:15', departureTime: '23:55', status: 'On Time', terminal: '', gate: '', approved: false }
+        ];
+
+        let isConnectedToStaff = false;
+
+        function fetchLiveFlights() {
+            try {
+                // Fetch the EXACT same key the staff portal saves to
+                const saved = localStorage.getItem('airport_flights_db_v2');
+                if (saved) {
+                    isConnectedToStaff = true;
+                    return JSON.parse(saved);
+                }
+            } catch (error) {
+                console.warn("Storage blocked. Using default data.");
+            }
+            isConnectedToStaff = false;
+            return INITIAL_FLIGHTS;
+        }
+
+        // --- UTILS ---
+        const formatClock = (date) => date.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        // Convert 24h to 12h for flight lists
+        const formatTimeString12Hour = (timeStr) => {
+            if (!timeStr) return '-';
+            if (timeStr.toLowerCase().includes('m')) return timeStr;
+            const parts = timeStr.split(':');
+            let h = parseInt(parts[0], 10);
+            let m = parts[1] ? parts[1].substring(0, 2) : '00';
+            if (isNaN(h)) return timeStr;
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
+        };
+
+        const getMinutesFromString = (timeStr) => {
+            if(!timeStr) return 0;
+            const parts = timeStr.split(':');
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+        };
+
+        // --- CORE UI RENDERER ---
+        function updateDisplay() {
+            const now = new Date();
+            document.getElementById('clock-display').innerText = formatClock(now);
+            
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            const flights = fetchLiveFlights();
+
+            // Update Status Indicator visually
+            const syncStatusEl = document.getElementById('sync-status');
+            if (isConnectedToStaff) {
+                syncStatusEl.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-link mr-1"></i> Linked to Ground Control</span>`;
+            } else {
+                syncStatusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-link-slash mr-1"></i> Sandbox / Offline Mode (Cannot Sync)</span>`;
+            }
+
+            // Segment Flights (Only Arriving and Parked needed)
+            const arrivingFlights = flights.filter(f => {
+                const arrMins = getMinutesFromString(f.arrivalTime);
+                const depMins = getMinutesFromString(f.departureTime);
+                return f.status !== 'Departed' && arrMins > currentMins && depMins >= currentMins;
+            }).sort((a, b) => getMinutesFromString(a.arrivalTime) - getMinutesFromString(b.arrivalTime));
+
+            const parkedFlights = flights.filter(f => {
+                const arrMins = getMinutesFromString(f.arrivalTime);
+                const depMins = getMinutesFromString(f.departureTime);
+                return f.status !== 'Departed' && arrMins <= currentMins && depMins >= currentMins;
+            }).sort((a, b) => getMinutesFromString(a.departureTime) - getMinutesFromString(b.departureTime));
+
+
+            // 1. Render Arriving
+            const arrHTML = arrivingFlights.length === 0 ? 
+                `<div class="p-8 text-center text-blue-500 font-bold tracking-widest uppercase">No Incoming Flights</div>` :
+                arrivingFlights.map(f => createFlightCard(f, 'Arrival')).join('');
+            document.getElementById('arriving-container').innerHTML = arrHTML;
+
+            // 2. Render Parked
+            const parkedHTML = parkedFlights.length === 0 ? 
+                `<div class="p-8 text-center text-teal-600 font-bold tracking-widest uppercase">No Parked Aircrafts</div>` :
+                parkedFlights.map(f => createFlightCard(f, 'Parked')).join('');
+            document.getElementById('parked-container').innerHTML = parkedHTML;
+        }
+
+        // --- HTML CARD GENERATOR ---
+        function createFlightCard(flight, type) {
+            const isEmerg = flight.status.toLowerCase().includes('emergency');
+            const isCargo = flight.aircraftModel.toLowerCase().includes('cargo');
+            
+            // Status colors
+            let statusBadge = '';
+            if (isEmerg) {
+                statusBadge = `<span class="bg-red-900/50 text-red-400 border border-red-700 px-3 py-1 rounded text-sm font-bold uppercase animate-pulse">Emergency</span>`;
+            } else if (flight.status === 'Late') {
+                statusBadge = `<span class="bg-amber-900/50 text-amber-400 border border-amber-700 px-3 py-1 rounded text-sm font-bold uppercase">Delayed</span>`;
+            } else {
+                statusBadge = `<span class="bg-emerald-900/50 text-emerald-400 border border-emerald-700 px-3 py-1 rounded text-sm font-bold uppercase">On Time</span>`;
+            }
+
+            // CRITICAL: Terminal & Gate Logic 
+            // Only reveal if 'approved' is TRUE in the database!
+            let locationDisplay = '';
+            if (flight.approved && flight.terminal) {
+                // Ground Control Approved -> Reveal Data
+                locationDisplay = `
+                    <div class="flex space-x-4 mt-3">
+                        <div class="bg-blue-600 border border-blue-400 px-4 py-1.5 rounded-lg text-white flex items-center shadow-lg shadow-blue-900/50">
+                            <span class="text-xs text-blue-200 uppercase mr-3 tracking-wider font-bold">Terminal</span>
+                            <span class="font-black text-2xl">${flight.terminal}</span>
+                        </div>
+                        <div class="bg-blue-600 border border-blue-400 px-4 py-1.5 rounded-lg text-white flex items-center shadow-lg shadow-blue-900/50">
+                            <span class="text-xs text-blue-200 uppercase mr-3 tracking-wider font-bold">Gate</span>
+                            <span class="font-black text-2xl">${flight.gate}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Ground Control Pending -> Hide Data
+                locationDisplay = `
+                    <div class="flex space-x-3 mt-3 tba-pulse">
+                        <div class="bg-slate-800 border-2 border-dashed border-slate-600 px-6 py-2 rounded-lg text-slate-400 flex items-center">
+                            <i class="fa-solid fa-lock mr-3 text-sm"></i>
+                            <span class="font-bold text-md tracking-widest uppercase">TBA / Awaiting Approval</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Primary Time Display depending on column
+            let timeLabel = '';
+            let timeValue = '';
+            if (type === 'Arrival') {
+                timeLabel = "Est. Arrival";
+                timeValue = formatTimeString12Hour(flight.arrivalTime);
+            } else if (type === 'Parked') {
+                timeLabel = "Est. Departure";
+                timeValue = formatTimeString12Hour(flight.departureTime);
+            }
+
+            return `
+                <div class="bg-slate-800/40 hover:bg-slate-800/80 transition-colors border border-slate-700 rounded-xl p-6 flex justify-between items-center shadow-lg">
+                    <div>
+                        <div class="flex items-center space-x-4 mb-2">
+                            <h3 class="text-3xl font-black text-white tracking-widest">${flight.flightNumber}</h3>
+                            ${isCargo ? `<div class="bg-amber-900/50 px-2 py-1 rounded border border-amber-700 flex items-center"><i class="fa-solid fa-box text-amber-400 mr-2 text-xs"></i><span class="text-xs text-amber-400 font-bold uppercase">Cargo</span></div>` : ''}
+                            ${isEmerg ? `<i class="fa-solid fa-triangle-exclamation text-red-500 animate-pulse text-2xl"></i>` : ''}
+                        </div>
+                        <p class="text-blue-300 font-bold text-md tracking-wide mb-2">${flight.airline} <span class="opacity-50 mx-2">|</span> ${flight.aircraftModel}</p>
+                        ${locationDisplay}
+                    </div>
+                    
+                    <div class="text-right flex flex-col items-end pl-6 border-l border-slate-700/50">
+                        <div class="text-sm text-blue-400 font-bold uppercase tracking-widest mb-1">${timeLabel}</div>
+                        <div class="font-mono text-4xl font-black text-white tracking-wider mb-4 drop-shadow-lg">${timeValue}</div>
+                        ${statusBadge}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INIT & POLLING ---
+        // Run immediately, then check every single second to keep synced with Staff app
+        updateDisplay();
+        setInterval(updateDisplay, 1000);
+
+        // Fallback standard storage event listener (triggers instantly if opened side-by-side)
+        window.addEventListener('storage', (e) => {
+            if(e.key === 'airport_flights_db_v2') updateDisplay();
+        });
+
+    </script>
+</body>
+</html>
