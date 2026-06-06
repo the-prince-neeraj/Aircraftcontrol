@@ -45,7 +45,7 @@
 
     <!-- DASHBOARD VIEW -->
     <div id="view-dashboard" class="p-6 space-y-6 block">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Side: Departed -->
             <div class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden flex flex-col h-[400px]">
                 <div class="bg-slate-100 p-4 border-b border-slate-200 flex items-center space-x-2">
@@ -53,6 +53,17 @@
                     <h2 class="text-lg font-bold text-slate-800">Recently Departed</h2>
                 </div>
                 <div class="p-4 flex-1 overflow-y-auto" id="departed-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Middle Side: Parked -->
+            <div class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden flex flex-col h-[400px]">
+                <div class="bg-teal-50 p-4 border-b border-teal-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-plane text-teal-600 text-lg"></i>
+                    <h2 class="text-lg font-bold text-teal-900">Parked Aircrafts</h2>
+                </div>
+                <div class="p-4 flex-1 overflow-y-auto" id="parked-list">
                     <!-- Populated by JS -->
                 </div>
             </div>
@@ -172,18 +183,39 @@
     <script>
         // --- INITIAL MOCK DATA ---
         const INITIAL_FLIGHTS = [
-            { id: '1', flightNumber: 'AI101', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '14:30', departureTime: '15:30', status: 'On Time', terminal: '', gate: '', approved: false },
-            { id: '2', flightNumber: '6E205', airline: 'IndiGo', aircraftModel: 'Airbus A321neo', arrivalTime: '15:10', departureTime: '16:00', status: 'Late', terminal: '', gate: '', approved: false },
-            { id: '3', flightNumber: 'SJ731', airline: 'SpiceJet', aircraftModel: 'Boeing 737 Cargo', arrivalTime: '15:45', departureTime: '17:00', status: 'On Time', terminal: '', gate: '', approved: false },
-            { id: '4', flightNumber: 'UK827', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '16:20', departureTime: '17:15', status: 'Emergency', terminal: '', gate: '', approved: false },
-            { id: '5', flightNumber: 'SG514', airline: 'SpiceJet', aircraftModel: 'Boeing 737-800', arrivalTime: '12:30', departureTime: '13:15', status: 'Departed', terminal: 'B', gate: '3', approved: true },
-            { id: '6', flightNumber: 'AK189', airline: 'AirAsia', aircraftModel: 'Airbus A321neo', arrivalTime: '13:00', departureTime: '13:55', status: 'Departed', terminal: 'A', gate: '2', approved: true }
+            { id: '1', flightNumber: 'UK734', airline: 'Vistara', aircraftModel: 'Boeing 787-9', arrivalTime: '00:03', departureTime: '00:56', status: 'On Time', terminal: 'A', gate: '1', approved: true },
+            { id: '2', flightNumber: 'UK827', airline: 'Air India', aircraftModel: 'Airbus A320neo', arrivalTime: '00:19', departureTime: '01:04', status: 'On Time', terminal: 'B', gate: '2', approved: true },
+            { id: '3', flightNumber: 'AK189', airline: 'IndiGo', aircraftModel: 'Airbus A321neo', arrivalTime: '01:15', departureTime: '01:58', status: 'Late', terminal: 'C', gate: '3', approved: true },
+            { id: '4', flightNumber: 'AI898', airline: 'SpiceJet', aircraftModel: 'Boeing 787-8', arrivalTime: '01:26', departureTime: '02:10', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '5', flightNumber: '6E622', airline: 'AirAsia', aircraftModel: 'Airbus A320', arrivalTime: '01:42', departureTime: '02:38', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '6', flightNumber: 'SG514', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '02:20', departureTime: '03:03', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '7', flightNumber: 'UK873', airline: 'Air India', aircraftModel: 'Airbus A321neo', arrivalTime: '02:55', departureTime: '03:45', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '8', flightNumber: 'GH125', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '03:42', departureTime: '04:36', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '9', flightNumber: 'AI202', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '05:15', departureTime: '06:10', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '10', flightNumber: '6E303', airline: 'IndiGo', aircraftModel: 'Airbus A321', arrivalTime: '06:30', departureTime: '07:45', status: 'Emergency', terminal: '', gate: '', approved: false },
+            { id: '11', flightNumber: 'AI101', airline: 'Air India', aircraftModel: 'Airbus A320', arrivalTime: '08:15', departureTime: '09:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '12', flightNumber: '6E205', airline: 'IndiGo', aircraftModel: 'Airbus A321neo', arrivalTime: '08:40', departureTime: '09:20', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '13', flightNumber: 'UK312', airline: 'Vistara', aircraftModel: 'Boeing 787-9', arrivalTime: '09:05', departureTime: '10:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '14', flightNumber: 'SG417', airline: 'SpiceJet', aircraftModel: 'Boeing 737-800', arrivalTime: '09:30', departureTime: '10:15', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '15', flightNumber: 'AK520', airline: 'AirAsia', aircraftModel: 'Airbus A320neo', arrivalTime: '10:00', departureTime: '10:45', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '16', flightNumber: 'UK845', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '11:15', departureTime: '12:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '17', flightNumber: 'FX991', airline: 'FedEx', aircraftModel: 'Boeing 777 Cargo', arrivalTime: '12:30', departureTime: '13:30', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '18', flightNumber: 'AI333', airline: 'Air India', aircraftModel: 'Airbus A350', arrivalTime: '13:45', departureTime: '14:45', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '19', flightNumber: 'SJ731', airline: 'SpiceJet', aircraftModel: 'Boeing 737 Cargo', arrivalTime: '15:45', departureTime: '17:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '20', flightNumber: 'UK999', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '16:20', departureTime: '17:15', status: 'Emergency', terminal: '', gate: '', approved: false },
+            { id: '21', flightNumber: '6E777', airline: 'IndiGo', aircraftModel: 'Airbus A320neo', arrivalTime: '18:00', departureTime: '19:00', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '22', flightNumber: 'AK888', airline: 'AirAsia', aircraftModel: 'Airbus A320', arrivalTime: '19:30', departureTime: '20:30', status: 'Late', terminal: '', gate: '', approved: false },
+            { id: '23', flightNumber: 'UK842', airline: 'Vistara', aircraftModel: 'Airbus A320neo', arrivalTime: '21:20', departureTime: '22:10', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '24', flightNumber: 'AI888', airline: 'Air India', aircraftModel: 'Boeing 777-200LR', arrivalTime: '21:40', departureTime: '22:35', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '25', flightNumber: 'SG518', airline: 'SpiceJet', aircraftModel: 'Boeing 737-800', arrivalTime: '22:00', departureTime: '22:45', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '26', flightNumber: 'SJ732', airline: 'SpiceJet', aircraftModel: 'Boeing 737 Cargo', arrivalTime: '22:49', departureTime: '23:50', status: 'On Time', terminal: '', gate: '', approved: false },
+            { id: '27', flightNumber: 'AI821', airline: 'Air India', aircraftModel: 'Airbus A320neo', arrivalTime: '23:15', departureTime: '23:55', status: 'On Time', terminal: '', gate: '', approved: false }
         ];
 
         // --- SAFE LOCAL STORAGE WRAPPER (Fixes bugs in strict code editors) ---
         function loadSavedFlights() {
             try {
-                const saved = localStorage.getItem('airport_flights_db');
+                const saved = localStorage.getItem('airport_flights_db_v2');
                 if (saved) return JSON.parse(saved);
             } catch (error) {
                 console.warn("Local storage blocked by code editor sandbox. Using mock data in memory.");
@@ -193,7 +225,7 @@
 
         function saveState() {
             try {
-                localStorage.setItem('airport_flights_db', JSON.stringify(state.flights));
+                localStorage.setItem('airport_flights_db_v2', JSON.stringify(state.flights));
             } catch (error) {
                 console.warn("Could not save to local storage (sandbox restrictions). State saved in memory only.");
             }
@@ -214,21 +246,37 @@
         const getCurrentMinutes = () => state.time.getHours() * 60 + state.time.getMinutes();
         const getMinutesFromString = (timeStr) => {
             if(!timeStr) return 0;
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
+            // Parse time ignoring seconds if present
+            const parts = timeStr.split(':');
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
         };
 
         // --- CORE FUNCTIONS ---
         function updateClock() {
             state.time = new Date();
             document.getElementById('clock-display').innerText = formatTime(state.time);
-            if(state.currentView === 'dashboard') renderDashboardTimeSensitive(); // Update lists without full re-render
+            if(state.currentView === 'dashboard') {
+                renderDashboardTimeSensitive(); // Update lists without full re-render
+                
+                // Periodically update predictions so departed flights drop off
+                if (state.time.getSeconds() % 10 === 0) {
+                     generatePredictions();
+                     renderPredictions();
+                }
+            }
         }
 
         function generatePredictions() {
             state.predictions = {};
+            const currentMins = getCurrentMinutes();
+
             state.flights.forEach(f => {
-                if (!f.approved && !f.terminal) {
+                const arrMins = getMinutesFromString(f.arrivalTime);
+                
+                // Only predict for flights that are not approved, have no terminal, and arrive in the future
+                if (!f.approved && !f.terminal && arrMins >= currentMins) {
                     let term, gate;
                     const isCargo = f.aircraftModel.toLowerCase().includes('cargo');
                     const isEmergency = f.status.toLowerCase().includes('emergency');
@@ -248,6 +296,14 @@
                     }
 
                     let predArrival = f.arrivalTime;
+                    // Simplify predicted arrival formatting to HH:MM
+                    let displayArr = f.arrivalTime;
+                    if(displayArr.length > 5) {
+                        const parts = displayArr.split(':');
+                        displayArr = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+                    }
+                    predArrival = displayArr;
+
                     if (state.isRaining && !isEmergency) {
                         const mins = getMinutesFromString(f.arrivalTime) + 15;
                         const h = Math.floor(mins / 60) % 24;
@@ -267,7 +323,7 @@
                     ...f, 
                     terminal: pred.terminal, 
                     gate: pred.gate, 
-                    arrivalTime: pred.predictedArrival,
+                    arrivalTime: pred.predictedArrival, // Update to the newly calculated arrival time
                     approved: true 
                 } : f);
                 saveState();
@@ -337,20 +393,25 @@
                 return f.status === 'Departed' || (depMins < currentMins && currentMins - depMins <= 240);
             }).sort((a, b) => getMinutesFromString(b.departureTime) - getMinutesFromString(a.departureTime));
 
-            const arrivingFlights = state.flights.filter(f => {
+            const parkedFlights = state.flights.filter(f => {
+                const arrMins = getMinutesFromString(f.arrivalTime);
                 const depMins = getMinutesFromString(f.departureTime);
-                return f.status !== 'Departed' && depMins >= currentMins;
+                return f.status !== 'Departed' && arrMins <= currentMins && depMins >= currentMins;
+            }).sort((a, b) => getMinutesFromString(a.departureTime) - getMinutesFromString(b.departureTime));
+
+            const arrivingFlights = state.flights.filter(f => {
+                const arrMins = getMinutesFromString(f.arrivalTime);
+                const depMins = getMinutesFromString(f.departureTime);
+                return f.status !== 'Departed' && arrMins > currentMins && depMins >= currentMins;
             }).sort((a, b) => getMinutesFromString(a.arrivalTime) - getMinutesFromString(b.arrivalTime));
 
-            const unapprovedFlights = state.flights.filter(f => !f.approved);
-
-            return { departedFlights, arrivingFlights, unapprovedFlights };
+            return { departedFlights, parkedFlights, arrivingFlights };
         }
 
         // Render time-sensitive lists (Departed & Arriving) without interrupting UI
         function renderDashboardTimeSensitive() {
             if (state.currentView !== 'dashboard') return;
-            const { departedFlights, arrivingFlights } = getLists();
+            const { departedFlights, parkedFlights, arrivingFlights } = getLists();
             
             // Departed
             const depHTML = departedFlights.length === 0 ? `<p class="text-slate-400 text-center mt-10">No recent departures.</p>` : 
@@ -367,6 +428,30 @@
                     </div>
                 `).join('') + `</div>`;
             document.getElementById('departed-list').innerHTML = depHTML;
+
+            // Parked
+            const parkedHTML = parkedFlights.length === 0 ? `<p class="text-slate-400 text-center mt-10">No parked aircrafts.</p>` : 
+                `<div class="space-y-3">` + parkedFlights.map(f => {
+                    const isEmerg = f.status.toLowerCase().includes('emergency');
+                    const isCargo = f.aircraftModel.toLowerCase().includes('cargo');
+                    const statusColor = f.status === 'Late' ? 'text-orange-500' : f.status === 'Emergency' ? 'text-red-600' : 'text-teal-600';
+                    return `
+                    <div class="flex justify-between items-center p-3 rounded-lg border border-teal-50 bg-white shadow-sm">
+                        <div>
+                            <div class="font-bold text-teal-900 flex items-center space-x-2">
+                                <span>${f.flightNumber}</span>
+                                ${isEmerg ? `<i class="fa-solid fa-triangle-exclamation text-red-500 text-xs"></i>` : ''}
+                                ${isCargo ? `<i class="fa-solid fa-box text-amber-600 text-xs"></i>` : ''}
+                            </div>
+                            <div class="text-sm text-slate-500 font-semibold">Term ${f.terminal || 'TBA'} • Gate ${f.gate || 'TBA'}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono font-bold text-teal-600">Dep: ${f.departureTime}</div>
+                            <div class="text-xs font-bold uppercase ${statusColor}">${f.status}</div>
+                        </div>
+                    </div>
+                `}).join('') + `</div>`;
+            document.getElementById('parked-list').innerHTML = parkedHTML;
 
             // Arriving
             const arrHTML = arrivingFlights.length === 0 ? `<p class="text-slate-400 text-center mt-10">No incoming flights.</p>` : 
@@ -393,15 +478,15 @@
             document.getElementById('arriving-list').innerHTML = arrHTML;
         }
 
-        // Render full dashboard including predictions
-        function renderDashboard() {
-            renderDashboardTimeSensitive();
-            const { unapprovedFlights } = getLists();
+        function renderPredictions() {
+            const currentMins = getCurrentMinutes();
             
-            // Predictions
+            // Only show predictions that we generated (which implies arr time >= current time)
+            const predictionsToDisplay = state.flights.filter(f => state.predictions[f.id]);
+
             let predHTML = "";
-            if(unapprovedFlights.length === 0) {
-                predHTML = `<p class="text-indigo-300 text-center py-6">All active flights have been routed and approved.</p>`;
+            if(predictionsToDisplay.length === 0) {
+                predHTML = `<p class="text-indigo-300 text-center py-6">No pending predictions for upcoming flights.</p>`;
             } else {
                 predHTML = `
                     <table class="w-full text-left border-collapse">
@@ -419,8 +504,8 @@
                         <tbody>
                 `;
                 
-                unapprovedFlights.forEach(f => {
-                    const pred = state.predictions[f.id] || {};
+                predictionsToDisplay.forEach(f => {
+                    const pred = state.predictions[f.id];
                     const isEmerg = f.status === 'Emergency';
                     const isCargo = f.aircraftModel.toLowerCase().includes('cargo');
                     
@@ -428,11 +513,18 @@
                     if (isEmerg) typeBadge = `<span class="text-red-400 font-bold flex items-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Emergency</span>`;
                     else if (isCargo) typeBadge = `<span class="text-amber-400 flex items-center"><i class="fa-solid fa-box mr-1"></i> Cargo</span>`;
 
+                    // Handle display for Scheduled Arr if it contains seconds
+                    let displaySchedArr = f.arrivalTime;
+                    if(displaySchedArr.length > 5) {
+                        const parts = displaySchedArr.split(':');
+                        displaySchedArr = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+                    }
+
                     predHTML += `
                         <tr class="border-b border-indigo-800/50 hover:bg-white/5 transition">
                             <td class="py-3 px-2 font-bold">${f.flightNumber}</td>
                             <td class="py-3 px-2 text-sm">${typeBadge}</td>
-                            <td class="py-3 px-2 font-mono text-indigo-300">${f.arrivalTime}</td>
+                            <td class="py-3 px-2 font-mono text-indigo-300">${displaySchedArr}</td>
                             <td class="py-3 px-2 font-mono font-bold text-amber-300">${pred.predictedArrival || '-'} ${pred.isRainDelayed ? '<span class="text-xs text-blue-300 ml-1">(+15m rain)</span>' : ''}</td>
                             <td class="py-3 px-2 font-bold text-xl">${pred.terminal || '-'}</td>
                             <td class="py-3 px-2 font-bold text-xl">${pred.gate || '-'}</td>
@@ -447,6 +539,12 @@
                 predHTML += `</tbody></table>`;
             }
             document.getElementById('predictions-container').innerHTML = predHTML;
+        }
+
+        // Render full dashboard including predictions
+        function renderDashboard() {
+            renderDashboardTimeSensitive();
+            renderPredictions();
         }
 
         // --- FORM HANDLERS ---
@@ -481,14 +579,22 @@
             // Deep copy to prevent mutating state before save
             editList = JSON.parse(JSON.stringify(arrivingFlights));
             
-            const listHTML = editList.map(f => `
+            const listHTML = editList.map(f => {
+                // Ensure time fields are in HH:MM format for the input[type=time]
+                let arrVal = f.arrivalTime;
+                if(arrVal.length > 5) arrVal = arrVal.substring(0, 5);
+                
+                let depVal = f.departureTime;
+                if(depVal.length > 5) depVal = depVal.substring(0, 5);
+
+                return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="p-4">
                         <div class="font-bold text-slate-800">${f.flightNumber}</div>
                         <div class="text-sm text-slate-500">${f.airline}</div>
                     </td>
-                    <td class="p-4"><input type="time" class="p-2 border rounded font-mono w-32 outline-none focus:ring-2 focus:ring-blue-400" value="${f.arrivalTime}" onchange="updateEditList('${f.id}', 'arrivalTime', this.value)" /></td>
-                    <td class="p-4"><input type="time" class="p-2 border rounded font-mono w-32 outline-none focus:ring-2 focus:ring-blue-400" value="${f.departureTime}" onchange="updateEditList('${f.id}', 'departureTime', this.value)" /></td>
+                    <td class="p-4"><input type="time" class="p-2 border rounded font-mono w-32 outline-none focus:ring-2 focus:ring-blue-400" value="${arrVal}" onchange="updateEditList('${f.id}', 'arrivalTime', this.value)" /></td>
+                    <td class="p-4"><input type="time" class="p-2 border rounded font-mono w-32 outline-none focus:ring-2 focus:ring-blue-400" value="${depVal}" onchange="updateEditList('${f.id}', 'departureTime', this.value)" /></td>
                     <td class="p-4">
                         <select class="p-2 border rounded outline-none focus:ring-2 focus:ring-blue-400 w-full" onchange="updateEditList('${f.id}', 'status', this.value)">
                             <option value="On Time" ${f.status === 'On Time' ? 'selected' : ''}>On Time</option>
@@ -498,7 +604,7 @@
                         </select>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
             
             document.getElementById('modify-list').innerHTML = listHTML;
         }
@@ -514,6 +620,7 @@
                 return updated ? updated : f;
             });
             saveState();
+            generatePredictions();
             changeView('dashboard');
         }
 
