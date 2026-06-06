@@ -125,11 +125,11 @@
                         <input id="add-am" required class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Airbus A320neo" />
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Arrival Time (HH:MM)</label>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Arrival Time</label>
                         <input id="add-at" required type="time" class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">Departure Time (HH:MM)</label>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Departure Time</label>
                         <input id="add-dt" required type="time" class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
                     </div>
                     <div class="col-span-2">
@@ -242,7 +242,21 @@
         let editList = [];
 
         // --- UTILS ---
-        const formatTime = (date) => date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        const formatTime = (date) => date.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' });
+        
+        // Helper to display stored 24h strings as 12h
+        const formatTimeString12Hour = (timeStr) => {
+            if (!timeStr) return '-';
+            if (timeStr.toLowerCase().includes('m')) return timeStr; // Return if already formatted
+            const parts = timeStr.split(':');
+            let h = parseInt(parts[0], 10);
+            let m = parts[1] ? parts[1].substring(0, 2) : '00';
+            if (isNaN(h)) return timeStr;
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12; // Convert 0 to 12
+            return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
+        };
+
         const getCurrentMinutes = () => state.time.getHours() * 60 + state.time.getMinutes();
         const getMinutesFromString = (timeStr) => {
             if(!timeStr) return 0;
@@ -296,7 +310,7 @@
                     }
 
                     let predArrival = f.arrivalTime;
-                    // Simplify predicted arrival formatting to HH:MM
+                    // Simplify predicted arrival formatting
                     let displayArr = f.arrivalTime;
                     if(displayArr.length > 5) {
                         const parts = displayArr.split(':');
@@ -422,7 +436,7 @@
                             <div class="text-sm text-slate-500">Term ${f.terminal || '-'} • Gate ${f.gate || '-'}</div>
                         </div>
                         <div class="text-right">
-                            <div class="font-mono font-semibold text-slate-600">${f.departureTime}</div>
+                            <div class="font-mono font-semibold text-slate-600">${formatTimeString12Hour(f.departureTime)}</div>
                             <div class="text-xs font-bold text-slate-400 uppercase">Departed</div>
                         </div>
                     </div>
@@ -446,7 +460,7 @@
                             <div class="text-sm text-slate-500 font-semibold">Term ${f.terminal || 'TBA'} • Gate ${f.gate || 'TBA'}</div>
                         </div>
                         <div class="text-right">
-                            <div class="font-mono font-bold text-teal-600">Dep: ${f.departureTime}</div>
+                            <div class="font-mono font-bold text-teal-600">Dep: ${formatTimeString12Hour(f.departureTime)}</div>
                             <div class="text-xs font-bold uppercase ${statusColor}">${f.status}</div>
                         </div>
                     </div>
@@ -470,7 +484,7 @@
                             <div class="text-sm text-slate-500">${f.airline} • ${f.aircraftModel}</div>
                         </div>
                         <div class="text-right">
-                            <div class="font-mono font-bold text-blue-600">${f.arrivalTime}</div>
+                            <div class="font-mono font-bold text-blue-600">${formatTimeString12Hour(f.arrivalTime)}</div>
                             <div class="text-xs font-bold uppercase ${statusColor}">${f.status}</div>
                         </div>
                     </div>
@@ -524,8 +538,8 @@
                         <tr class="border-b border-indigo-800/50 hover:bg-white/5 transition">
                             <td class="py-3 px-2 font-bold">${f.flightNumber}</td>
                             <td class="py-3 px-2 text-sm">${typeBadge}</td>
-                            <td class="py-3 px-2 font-mono text-indigo-300">${displaySchedArr}</td>
-                            <td class="py-3 px-2 font-mono font-bold text-amber-300">${pred.predictedArrival || '-'} ${pred.isRainDelayed ? '<span class="text-xs text-blue-300 ml-1">(+15m rain)</span>' : ''}</td>
+                            <td class="py-3 px-2 font-mono text-indigo-300">${formatTimeString12Hour(displaySchedArr)}</td>
+                            <td class="py-3 px-2 font-mono font-bold text-amber-300">${pred.predictedArrival ? formatTimeString12Hour(pred.predictedArrival) : '-'} ${pred.isRainDelayed ? '<span class="text-xs text-blue-300 ml-1">(+15m rain)</span>' : ''}</td>
                             <td class="py-3 px-2 font-bold text-xl">${pred.terminal || '-'}</td>
                             <td class="py-3 px-2 font-bold text-xl">${pred.gate || '-'}</td>
                             <td class="py-3 px-2 text-right">
@@ -580,7 +594,7 @@
             editList = JSON.parse(JSON.stringify(arrivingFlights));
             
             const listHTML = editList.map(f => {
-                // Ensure time fields are in HH:MM format for the input[type=time]
+                // Ensure time fields are in 24h format HH:MM for the input[type=time] binding
                 let arrVal = f.arrivalTime;
                 if(arrVal.length > 5) arrVal = arrVal.substring(0, 5);
                 
